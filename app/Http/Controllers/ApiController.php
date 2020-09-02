@@ -38,9 +38,15 @@ class ApiController extends Controller
         $input = $request->only('phone', 'name');
         $token = null;
 
-//        $token = $this->generateToken();
+        //$token = $this->generateToken($input)
+
+        // 辅助函数
         //$token = auth('api')->attempt($input);
-        if (!$token = JWTAuth::attempt($input)) {
+
+        // Facade
+        $token = JWTAuth::attempt($input);
+
+        if (! $token) {
             return $this->toJson(500, '账号或密码不正确');
         }
 
@@ -49,21 +55,20 @@ class ApiController extends Controller
 
     /**
      * 生成token
-     * @param $input
+     * @param $credentials
      * @return mixed
      */
-    private function generateToken($input=[])
+    private function generateToken($credentials=[])
     {
-        $token = JWTAuth::setToken('foo.bar.baz');
+        // 辅助函数
+        $token = auth('api')->attempt($credentials);
 
-        //$token = auth('api')->attempt($input);
+        // Facade
+        //$token = JWTAuth::attempt($credentials);
+
+        //其他两种,
+        //$token = JWTAuth::setToken('foo.bar.baz');
         //token  = JWTAuth::fromUser($user);
-
-        /*$customClaims = ['foo' => 'bar', 'baz' => 'bob'];
-        $payload = JWTFactory::make($customClaims);
-        $token = JWTAuth::encode($payload);*/
-
-//        $token = JWTAuth::attempt($input);
 
         return $token;
     }
@@ -75,7 +80,7 @@ class ApiController extends Controller
     private function getToken()
     {
         $token = JWTAuth::getToken();
-//        $token = JWTAuth::parseToken()->getToken();
+        //$token = auth($guard)->getToken;
         return $token;
     }
 
@@ -89,11 +94,11 @@ class ApiController extends Controller
         //guard 指的是config/auth.php 中 guard 选项中的 web/api/...
         $guard = 'api';
 
-//        $user = Auth::user(); //Illuminate\Support\Facades\Auth
-//        $user = Auth::guard($guard)->user();
-//        $user = auth($guard)->user();
+        // 辅助函数
+        //$user = auth($guard)->user();
+
+        // Facade
         $user = JWTAuth::authenticate($token);
-//        $user = JWTAuth::parseToken()->authenticate();
 
         return $user;
     }
@@ -108,8 +113,11 @@ class ApiController extends Controller
         $token = $request->input('token');
 
         try {
+            // Facade
             JWTAuth::invalidate($token);
-            //auth($guard)->logout(); //$guard 可以是 web/api
+
+            // 辅助函数
+            //auth($guard)->logout();
 
             return $this->toJson(1, '成功');
 
@@ -132,7 +140,6 @@ class ApiController extends Controller
     public function getAuthUser(Request $request)
     {
         $token  = $request->input('token');
-//        $token    = $this->getToken();
         $user   = $this->getUser($token);
 
         return $this->toJson(1, '成功', ['user' => $user]);

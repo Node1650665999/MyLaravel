@@ -4,6 +4,7 @@ namespace App\Exceptions;
 
 use Exception;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
 
 class Handler extends ExceptionHandler
 {
@@ -43,12 +44,17 @@ class Handler extends ExceptionHandler
      */
     public function render($request, Exception $exception)
     {
-        //return parent::render($request, $exception);
-        $data = [
-            'code'  => 500,
-            'msg'   => $exception->getMessage(),
-            'data'  => []
-        ];
-        return response()->json($data);
+        if($exception instanceof UnauthorizedHttpException)
+        {
+            // 重新登录
+            $data = [
+                'code'  => 101,
+                'msg'   => $exception->getMessage(),
+                'data'  => []
+            ];
+            return response()->json($data);
+        }
+
+        return parent::render($request, $exception);
     }
 }

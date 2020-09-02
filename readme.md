@@ -1,6 +1,6 @@
 
 ## JWT
-### 安装与配置
+### [安装与配置](https://learnku.com/articles/10885/full-use-of-jwt)
 #### 安装
 ```php
 composer require tymon/jwt-auth 1.*@rc
@@ -102,10 +102,8 @@ public function render($request, Exception $exception)
 #### 获取用户
 如下这几种方法都可以获取用户信息。
 ```php
-
+//guard 指的是config/auth.php 中 guard 选项中的 web/api/...
 $guard = 'api';
-
-$user = Auth::user(); 
 
 $user = Auth::guard($guard)->user();
 
@@ -116,15 +114,35 @@ $user = JWTAuth::authenticate($token);
 $user = JWTAuth::parseToken()->authenticate();
 ```
 
-#### 获取token
+#### 解析token
 ```php
+// 辅助函数
+$token = auth($guard)->getToken();
+
+// Facade
+$token = JWTAuth::parseToken()->getToken();
+
+// 从 request 中解析 token 到对象中，以便进行下一步操作
+JWTAuth::parseToken();
+
+//从 request 中获取 token,这个不用 parseToken ，因为方法内部会自动执行一次
 $token = JWTAuth::getToken();
 
-$token = JWTAuth::parseToken()->getToken();
+```
+
+#### 刷新token
+```php
+$newToken = JWTAuth::parseToken()->refresh();
+```
+
+#### 检测token
+```php
+JWTAuth::parseToken()->check();
 ```
 
 #### 销毁token
 ```php
+
 $guard = 'api'; //web/api
 
 JWTAuth::invalidate($token);
