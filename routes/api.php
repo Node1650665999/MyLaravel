@@ -19,6 +19,7 @@ use Illuminate\Http\Request;
 
 Route::any('login', 'ApiController@login');
 Route::any('register', 'ApiController@register');
+Route::any('test', 'TestController@userInfo');
 
 Route::middleware('auth.jwt')->group(function () {
     Route::any('logout', 'ApiController@logout');
