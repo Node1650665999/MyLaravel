@@ -4,7 +4,10 @@ namespace App\Models;
 
 use Illuminate\Support\Facades\DB;
 
-class BaseModel
+use Illuminate\Database\Eloquent\Model;
+
+
+class BaseModel extends Model
 {
     /**
      * @var string
@@ -16,32 +19,30 @@ class BaseModel
      */
     protected $table         = '';
 
-
     /**
      * @var \Illuminate\Database\ConnectionInterface|mixed|null
      */
-    private $connection         = null;
-
-    /**
-     * @var \Illuminate\Database\Query\Builder|null
-     */
-    private $queryBuilder       = null;
+    protected $conn         = null;
 
     /**
      * @var array
      */
-    private $connPool     = [];
+    protected $connPool     = [];
 
     /**
-     * @var array
+     * 表明模型是否应该被打上时间戳
+     *
+     * @var bool
      */
-    private static $connectPool  = [];
+    public $timestamps = false;
 
     /**
      * BaseModel constructor.
      */
     public function __construct()
     {
+        parent::__construct();
+
         if (! $this->connPool[$this->connectName])
         {
             $conn = DB::connection($this->connectName);
@@ -53,26 +54,7 @@ class BaseModel
         }
 
         $conn->enableQueryLog();
-        $this->connection   = $conn;
-
-        $this->setQueryBuilder($this->table);
-    }
-
-    /**
-     * @return \Illuminate\Database\ConnectionInterface|mixed|null
-     */
-    protected function getConnection()
-    {
-        return $this->connection;
-    }
-
-
-    /**
-     * @param $table
-     */
-    protected function setQueryBuilder($table)
-    {
-        $this->queryBuilder = $this->connection->table($table);
+        $this->conn   = $conn;
     }
 
     /**
@@ -82,7 +64,29 @@ class BaseModel
      */
     public function querySql($sql)
     {
-        return $this->connection->select($sql);
+        return $this->conn->select($sql);
+    }
+
+    /**
+     * 汇总求和
+     * @param $field
+     * @param array $where
+     * @return float|int
+     */
+    public function columnSum(string $field, array $where=[])
+    {
+       return $this->getBuilder($where)->sum($field);
+    }
+
+    /**
+     * 统计数量
+     * @param $where
+     * @param string $field
+     * @return float|int|string
+     */
+    public function rowCount(array $where=[], string $field='*')
+    {
+        return $this->getBuilder($where)->count($field);
     }
 
     /**
@@ -91,20 +95,9 @@ class BaseModel
      * @param $data
      * @return int
      */
-    public function update($where, $data)
+    public function updateRows($where, $data)
     {
         return $this->getBuilder($where)->update($data);
-    }
-
-    /**
-     * 软删除
-     * @param $where
-     * @return int
-     */
-    public function deleteSoft($where)
-    {
-        $data = ['is_del' => 1, 'updated_at' => currentTime()];
-        return $this->update($where, $data);
     }
 
     /**
@@ -112,7 +105,7 @@ class BaseModel
      * @param $where
      * @return int
      */
-    public function delete($where)
+    public function deleteRows($where)
     {
         return $this->getBuilder($where)->delete();
     }
@@ -122,9 +115,19 @@ class BaseModel
      * @param $data
      * @return int
      */
-    public function insert($data)
+    public function insertSingle($data)
     {
         return $this->getBuilder()->insertGetId($data);
+    }
+
+    /**
+     * 插入多行数据
+     * @param $data
+     * @return bool
+     */
+    public function insertMultiple($data)
+    {
+        return $this->getBuilder()->insert($data);
     }
 
     /**
@@ -134,11 +137,11 @@ class BaseModel
      * @param array $order
      * @return array
      */
-    public function getMultiple($where, $column=[], $order=[])
+    public function getMultiple($where, $column=[], $order=[], $limit=null)
     {
         $builder = $this->getBuilder($where, $order);
         $column  = empty($column) ? ['*'] : $column;
-        $data    = $builder->get($column);
+        $data    = $builder->limit($limit)->get($column);
         return $data ? $this->objectToArray($data) : [];
     }
 
@@ -165,7 +168,7 @@ class BaseModel
      */
     private function getBuilder($where=[], $order=[])
     {
-        $builder = $this->queryBuilder;
+        $builder = $this->conn->table($this->table);
         $builder = $this->getWhere($where, $builder);
         $builder = $this->getOrder($order, $builder);
         return   $builder;
@@ -227,19 +230,37 @@ class BaseModel
     }
 
     /**
-     * @param $where
-     * @param $order
+     * 分页数据
+     * @param array $where
+     * @param array $order
      * @param array $column
-     * @param $pageSize
-     * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator
+     * @param int $pageSize
+     * @return array
      */
-    public function getPage($where, $order, $column=[], $pageSize)
+    public function getPageList($where=[], $order=[], $column=[], $pageSize=15)
     {
         $builder = $this->getBuilder($where, $order);
         $column  = empty($column) ? ['*'] : $column;
-        return $builder->paginate($pageSize, $column);
+        $data    =  $builder->paginate($pageSize, $column)->toArray();
+        return   $this->formatPage($this->objectToArray($data));
     }
 
+    /**
+     * 分页数据格式化
+     * @param $pageData
+     * @return array
+     */
+    private function formatPage($pageData)
+    {
+        return [
+            'has_more_page' => $pageData['current_page'] >= $pageData['last_page'] ? 0 : 1,
+            'page'          => $pageData['current_page'],
+            'pages'         => $pageData['last_page'],
+            'total'         => $pageData['total'],
+            'per_page'      => $pageData['per_page'],
+            'list'          => $pageData['data'] ?: []
+        ];
+    }
 
     /**
      * 获取执行SQL
@@ -247,7 +268,7 @@ class BaseModel
      */
     public function getQuerySql()
     {
-        return $this->connection->getQueryLog();
+        return $this->conn->getQueryLog();
     }
 
     /**
@@ -255,7 +276,7 @@ class BaseModel
      */
     public function transStart()
     {
-        $this->connection->beginTransaction();
+        $this->conn->beginTransaction();
     }
 
     /**
@@ -263,7 +284,7 @@ class BaseModel
      */
     public function transRollBack()
     {
-        $this->connection->rollBack();
+        $this->conn->rollBack();
     }
 
     /**
@@ -271,7 +292,7 @@ class BaseModel
      */
     public function transCommit()
     {
-        $this->connection->commit();
+        $this->conn->commit();
     }
 
     /**
