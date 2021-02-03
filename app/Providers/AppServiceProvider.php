@@ -6,8 +6,8 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Schema;
 use DB;
 use Monolog\Handler\RotatingFileHandler;
+use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
-
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -36,11 +36,22 @@ class AppServiceProvider extends ServiceProvider
     private function logSql()
     {
         DB::listen(function ($query) {
-            $sql = str_replace("?", "'%s'", $query->sql);
-            $log = vsprintf($sql, $query->bindings);
-            //日志滚动默认保存七天
-            (new Logger('log'))->pushHandler(new RotatingFileHandler(storage_path('logs/sql/sql.log'), 7))
-                ->info($log);
+            $sql     = str_replace("?", "'%s'", $query->sql);
+            $sql     = vsprintf($sql, $query->bindings);
+
+            $file    = storage_path('logs/sql/sql.log');
+            $channel = config('logging.default');
+            $level   = Logger::DEBUG;
+            if ($channel == 'single') {
+
+                return new StreamHandler($file, $level);
+            }
+            else
+            {
+                //日志滚动默认保存七天
+                (new Logger('daily'))->pushHandler(new RotatingFileHandler($file, 7, $level))
+                    ->info($sql);
+            }
         });
     }
 }
