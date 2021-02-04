@@ -265,10 +265,13 @@ function logSingle($log, $file)
     (new Logger('single'))->pushHandler(new StreamHandler($file))->info($log);
 }
 
+
 /**
+ * 日志记录
  * @param string $data
+ * @param null $selfFilePath
  */
-function writeLog($data = '记录日志')
+function writeLog($data = '记录日志', $selfFilePath = null)
 {
     $trace    = debug_backtrace(false);
     $url      = request()->url();
@@ -278,7 +281,7 @@ function writeLog($data = '记录日志')
     $line     = $trace[0]['line'];
 
     $data     = is_array($data) ? json_encode($data, JSON_UNESCAPED_UNICODE) : $data;
-    $filePath = storage_path('logs/' . trim($path, '/') . "/{$filename}.log");
+    $filePath = $selfFilePath ? $selfFilePath :  storage_path('logs/' . trim($path, '/') . "/{$filename}.log");
     $log      = "data:{$data}" . PHP_EOL . "url:{$url}" . PHP_EOL . "param:{$param}" . PHP_EOL. "line:{$line}";
 
     logRotating($log, $filePath);
