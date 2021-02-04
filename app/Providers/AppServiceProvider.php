@@ -43,14 +43,13 @@ class AppServiceProvider extends ServiceProvider
             $channel = config('logging.default');
             $level   = Logger::DEBUG;
             if ($channel == 'single') {
-
-                return new StreamHandler($file, $level);
+                //保存日志到单个文件中
+                (new Logger('single'))->pushHandler(new StreamHandler($file, $level))->info($sql);
             }
             else
             {
                 //日志滚动默认保存七天
-                (new Logger('daily'))->pushHandler(new RotatingFileHandler($file, 7, $level))
-                    ->info($sql);
+                (new Logger('daily'))->pushHandler(new RotatingFileHandler($file, 7, $level))->info($sql);
             }
         });
     }
