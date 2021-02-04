@@ -240,7 +240,7 @@ function logRotating($log, $file)
         rename($file, $file . '_' . date('YmdHis'));
     }
 
-    $log = is_array($log) ? json_encode($log, JSON_UNESCAPED_UNICODE) : $log;
+    $log = is_array($log) ? toJsonUnicode($log) : $log;
 
     //日志滚动默认保存七天
     (new Logger('log'))->pushHandler(new RotatingFileHandler($file, 7))
@@ -260,7 +260,7 @@ function logSingle($log, $file)
         rename($file, $file . '_' . date('YmdHis'));
     }
 
-    $log = is_array($log) ? json_encode($log, JSON_UNESCAPED_UNICODE) : $log;
+    $log = is_array($log) ? toJsonUnicode($log) : $log;
 
     (new Logger('single'))->pushHandler(new StreamHandler($file))->info($log);
 }
@@ -274,13 +274,14 @@ function logSingle($log, $file)
 function writeLog($data = '记录日志', $selfFilePath = null)
 {
     $trace    = debug_backtrace(false);
-    $url      = request()->url();
-    $param    = http_build_query(request()->all());
+    $request  = request();
+    $url      = $request->url();
+    $param    = toJsonUnicode($request->all());
     $path     = preg_replace("/\\\+/","/",$trace[1]['class']);
     $filename = $trace[1]['function'];
     $line     = $trace[0]['line'];
 
-    $data     = is_array($data) ? json_encode($data, JSON_UNESCAPED_UNICODE) : $data;
+    $data     = is_array($data) ? toJsonUnicode($data) : $data;
     $filePath = $selfFilePath ? $selfFilePath :  storage_path('logs/' . trim($path, '/') . "/{$filename}.log");
     $log      = "data:{$data}" . PHP_EOL . "url:{$url}" . PHP_EOL . "param:{$param}" . PHP_EOL. "line:{$line}";
 
