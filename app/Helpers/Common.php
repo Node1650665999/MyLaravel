@@ -142,6 +142,22 @@ function isUrl($url)
 }
 
 /**
+非中文替换
+ * @param $value
+ * @return bool|string
+ */
+function checkWords($value)
+{
+    $value = preg_replace('/[^\x{4e00}-\x{9fa5}]/u', '', $value);
+    if(mb_strlen($value, 'utf-8') != 5)
+    {
+        return '汉字字数必须为5个';
+    }
+
+    return true;
+}
+
+/**
  * 版本判断app版本是否大于某个版本
  * @param $version
  * @param string $operator
@@ -162,7 +178,8 @@ function appVersionGreaterThan($version, $operator = '>')
 function handleInValidVideoUrl($url, $need = 'video')
 {
     //非合法的url
-    if (!isUrl($url) || !$url) {
+    if(! filter_var($url, FILTER_VALIDATE_URL) || ! $url)
+    {
         return '';
     }
 
