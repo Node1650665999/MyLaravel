@@ -142,22 +142,6 @@ function isUrl($url)
 }
 
 /**
-非中文替换
- * @param $value
- * @return bool|string
- */
-function checkWords($value)
-{
-    $value = preg_replace('/[^\x{4e00}-\x{9fa5}]/u', '', $value);
-    if(mb_strlen($value, 'utf-8') != 5)
-    {
-        return '汉字字数必须为5个';
-    }
-
-    return true;
-}
-
-/**
  * 版本判断app版本是否大于某个版本
  * @param $version
  * @param string $operator
@@ -327,13 +311,29 @@ function filterInvalidChinese($word)
     return  $word;
 }
 
+/**
+非中文替换
+ * @param $value
+ * @return bool|string
+ */
+function checkWords($value)
+{
+    $value = preg_replace('/[^\x{4e00}-\x{9fa5}]/u', '', $value);
+    if(mb_strlen($value, 'utf-8') != 5)
+    {
+        return '汉字字数必须为5个';
+    }
+
+    return true;
+}
+
 
 /**
  * 参数响应
- * @param array $data
  * @param int $code
  * @param string $msg
- * @return \think\response\Json
+ * @param array $data
+ * @return \Illuminate\Http\JsonResponse
  */
 function apiResponse($code=200, $msg='成功', $data=[])
 {
@@ -342,10 +342,25 @@ function apiResponse($code=200, $msg='成功', $data=[])
         'msg'   => $msg,
         'data'  => $data ?: null,
     ];
-
-    return json($data);
+    return  response()->json($data);
 }
 
+
+if (! function_exists('dd'))
+{
+    /**
+     * @param mixed ...$vars
+     */
+    function dd(...$vars)
+    {
+        echo '<pre>';
+        foreach ($vars as $v) {
+            print_r($v);
+            echo '<br>';
+        }
+        exit(1);
+    }
+}
 
 
 
