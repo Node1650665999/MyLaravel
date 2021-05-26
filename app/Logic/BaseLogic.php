@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Logic;
+use App\Models\PmsAdminModel;
 /**
  * Class BaseLogic
  * @package app\common\logic
@@ -11,6 +12,11 @@ class BaseLogic
      * @var array 返回信息
      */
     protected $returnArr = [];
+
+    public function __construct()
+    {
+        //todo
+    }
 
     /**
      * 设置返回信息
@@ -84,4 +90,51 @@ class BaseLogic
 
         return $data;
     }
+
+    /**
+     * 获取 adminId
+     * @return mixed|null
+     */
+    protected function adminId()
+    {
+        return $this->adminData("id");
+    }
+
+    /**
+     * 获取 adminName
+     * @return mixed|null
+     */
+    protected function adminName()
+    {
+        return $this->adminData('username');
+    }
+
+    /**
+     * 管理员信息
+     * @return array|false|\PDOStatement|string|\think\Model|null
+     * @throws \think\db\exception\DataNotFoundException
+     * @throws \think\db\exception\ModelNotFoundException
+     * @throws \think\exception\DbException
+     */
+    public function adminData($filed = null)
+    {
+        $model = new PmsAdminModel;
+        $token = request()->input('token');
+        $where = [['token', '=', $token]];
+        $info  = $model->getSingle($where);
+        return $filed ? $info[$filed] : $info;
+    }
+
+    /**
+     * 应用ID
+     * @return int
+     */
+    public function appId()
+    {
+        return 1;
+    }
+
+
+
+
 }

@@ -362,6 +362,17 @@ if (! function_exists('dd'))
     }
 }
 
+/**
+ * @param $words
+ * @return string
+ */
+function handleWords($words)
+{
+    $words = preg_replace('/[^\x{4e00}-\x{9fa5}]/u', '', $words);
+    $words = array_filter(mb_str_split($words));
+    return implode(',', $words);
+}
+
 
 
 
