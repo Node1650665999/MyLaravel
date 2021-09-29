@@ -1,4 +1,5 @@
 <?php
+
 use Monolog\Handler\RotatingFileHandler;
 use Monolog\Logger;
 
@@ -81,7 +82,7 @@ function isTwoDimensional($arr): bool
  * @param null $time
  * @return string
  */
-function makeDate($time = NULL): string
+function formatDate($time = NULL): string
 {
     $text = '';
     $time = $time === NULL || $time > time() ? time() : intval($time);
@@ -114,6 +115,38 @@ function makeDate($time = NULL): string
             break;
     }
     return $text;
+}
+
+/**
+ * 计算两个时间差值
+ * @param $time1
+ * @param $time2
+ * @return array
+ */
+function diffTime($time1, $time2)
+{
+    $timediff = abs($time2 - $time1);
+
+    //计算天数
+    $days = intval($timediff / 86400);
+
+    //计算小时数
+    $remain = $timediff % 86400;
+    $hours = intval($remain / 3600);
+
+    //计算分钟数
+    $remain = $remain % 3600;
+    $mins = intval($remain / 60);
+
+    //计算秒数
+    $secs = $remain % 60;
+
+    return [
+        "days"          => $days,
+        "hours"         => $hours,
+        "minutes"       => $mins,
+        "seconds"       => $secs
+    ];
 }
 
 
@@ -162,8 +195,7 @@ function appVersionGreaterThan($version, $operator = '>')
 function handleInValidVideoUrl($url, $need = 'video')
 {
     //非合法的url
-    if(! filter_var($url, FILTER_VALIDATE_URL) || ! $url)
-    {
+    if (!filter_var($url, FILTER_VALIDATE_URL) || !$url) {
         return '';
     }
 
@@ -199,7 +231,7 @@ function getVideoFrame($videoUrl, $offset, $coverUrl = '')
  * @param $n1 第一个数
  * @param $symbol 计算符号 + - * / %
  * @param $n2 第二个数
- * @param string $scale  精度 默认为小数点后两位
+ * @param string $scale 精度 默认为小数点后两位
  * @return  string
  */
 function priceCalc($n1, $symbol, $n2, $scale = '2')
@@ -236,8 +268,7 @@ function priceCalc($n1, $symbol, $n2, $scale = '2')
 function logRotating($log, $file)
 {
     // 大于5M重命名
-    if (is_file($file) && filesize($file) > 5 * 1024 * 1024)
-    {
+    if (is_file($file) && filesize($file) > 5 * 1024 * 1024) {
         rename($file, $file . '_' . date('YmdHis'));
     }
 
@@ -256,8 +287,7 @@ function logRotating($log, $file)
 function logSingle($log, $file)
 {
     // 大于5M重命名
-    if (is_file($file) && filesize($file) > 5 * 1024 * 1024)
-    {
+    if (is_file($file) && filesize($file) > 5 * 1024 * 1024) {
         rename($file, $file . '_' . date('YmdHis'));
     }
 
@@ -274,17 +304,17 @@ function logSingle($log, $file)
  */
 function writeLog($data = '记录日志', $selfFilePath = null)
 {
-    $trace    = debug_backtrace(false);
-    $request  = request();
-    $url      = $request->url();
-    $param    = toJsonUnicode($request->all());
-    $path     = preg_replace("/\\\+/","/",$trace[1]['class']);
+    $trace = debug_backtrace(false);
+    $request = request();
+    $url = $request->url();
+    $param = toJsonUnicode($request->all());
+    $path = preg_replace("/\\\+/", "/", $trace[1]['class']);
     $filename = $trace[1]['function'];
-    $line     = $trace[0]['line'];
+    $line = $trace[0]['line'];
 
-    $data     = is_array($data) ? toJsonUnicode($data) : $data;
-    $filePath = $selfFilePath ? $selfFilePath :  storage_path('logs/' . trim($path, '/') . "/{$filename}.log");
-    $log      = "data:{$data}" . PHP_EOL . "url:{$url}" . PHP_EOL . "param:{$param}" . PHP_EOL. "line:{$line}";
+    $data = is_array($data) ? toJsonUnicode($data) : $data;
+    $filePath = $selfFilePath ? $selfFilePath : storage_path('logs/' . trim($path, '/') . "/{$filename}.log");
+    $log = "data:{$data}" . PHP_EOL . "url:{$url}" . PHP_EOL . "param:{$param}" . PHP_EOL . "line:{$line}";
 
     logRotating($log, $filePath);
 }
@@ -301,26 +331,25 @@ function setIndexKey($list, $key)
 }
 
 /**
-非中文替换
+ * 非中文替换
  * @param $word
  * @return bool|string
  */
 function filterInvalidChinese($word)
 {
     $word = preg_replace('/[^\x{4e00}-\x{9fa5}]/u', '', $word);
-    return  $word;
+    return $word;
 }
 
 /**
-非中文替换
+ * 非中文替换
  * @param $value
  * @return bool|string
  */
 function checkWords($value)
 {
     $value = preg_replace('/[^\x{4e00}-\x{9fa5}]/u', '', $value);
-    if(mb_strlen($value, 'utf-8') != 5)
-    {
+    if (mb_strlen($value, 'utf-8') != 5) {
         return '汉字字数必须为5个';
     }
 
@@ -335,19 +364,18 @@ function checkWords($value)
  * @param array $data
  * @return \Illuminate\Http\JsonResponse
  */
-function apiResponse($code=200, $msg='成功', $data=[])
+function apiResponse($code = 200, $msg = '成功', $data = [])
 {
     $data = [
-        'code'  => $code,
-        'msg'   => $msg,
-        'data'  => $data ?: null,
+        'code' => $code,
+        'msg' => $msg,
+        'data' => $data ?: null,
     ];
-    return  response()->json($data);
+    return response()->json($data);
 }
 
 
-if (! function_exists('dd'))
-{
+if (!function_exists('dd')) {
     /**
      * @param mixed ...$vars
      */
