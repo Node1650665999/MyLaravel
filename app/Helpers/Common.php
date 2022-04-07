@@ -307,14 +307,16 @@ function writeLog($data = '记录日志', $selfFilePath = null)
     $trace = debug_backtrace(false);
     $request = request();
     $url = $request->url();
-    $param = toJsonUnicode($request->all());
+    $param = $request->all();
+    $input =  file_get_contents("php://input") ?: ($param ? toJsonUnicode($param) : '');
+    $formatParam = sprintf("%s", $input);
     $path = preg_replace("/\\\+/", "/", $trace[1]['class']);
     $filename = $trace[1]['function'];
     $line = $trace[0]['line'];
 
     $data = is_array($data) ? toJsonUnicode($data) : $data;
     $filePath = $selfFilePath ? $selfFilePath : storage_path('logs/' . trim($path, '/') . "/{$filename}.log");
-    $log = "data:{$data}" . PHP_EOL . "url:{$url}" . PHP_EOL . "param:{$param}" . PHP_EOL . "line:{$line}";
+    $log = "data:{$data}" . PHP_EOL . "url:{$url}" . PHP_EOL . "param:{$formatParam}" . PHP_EOL . "line:{$line}";
 
     logRotating($log, $filePath);
 }

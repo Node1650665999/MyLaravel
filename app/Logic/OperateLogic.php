@@ -35,10 +35,13 @@ class OperateLogic extends BaseLogic {
      */
     public function create(Request $request)
     {
-        $param = $request->input();
+        $param       = $request->all();
+        $input       = file_get_contents("php://input") ?: ($param ? toJsonUnicode($param) : '');
+        $formatParam = sprintf("%s", $input);
+
         $data = [
             'uri'       => $request->fullUrl(),
-            'params'    => $param ? toJsonUnicode($param) : '',
+            'params'    => $formatParam,
             'admin_id'  => $this->adminId(),
             'admin_name'=> $this->adminName(),
             'method'    => $request->method(),
